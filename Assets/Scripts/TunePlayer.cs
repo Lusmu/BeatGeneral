@@ -2,23 +2,70 @@ using UnityEngine;
 using System.Collections;
 using BeatGeneral;
 
+/// <summary>
+/// Tune player to play tunes created by BeatGenerator.
+/// </summary>
 public class TunePlayer : MonoBehaviour
 {
+	/// <summary>
+	/// Max notes (audio sources) that can be created.
+	/// </summary>
 	public const int maxNotes = 32;
 	
+	/// <summary>
+	/// Occurs on every beat.
+	/// For eacmple when bpm is 60, occurs once a second,
+	/// regardless if there are any notes playing.
+	/// </summary>
 	public event System.Action<int> OnBeat;
+	/// <summary>
+	/// Occurs every time a note is player.
+	/// Sends as a parameter the audio source playing the note.
+	/// </summary>
 	public event System.Action<AudioSource> OnPlayNote;
+	/// <summary>
+	/// Occurs when init has been done and playing is about to commence.
+	/// </summary>
 	public event System.Action OnInitDone;
 	
+	/// <summary>
+	/// The base audio clip that whose pitch gets modified.
+	/// </summary>
 	public AudioClip baseSound;
+	
 	public GeneratorSettings generatorSettings;
 	public TuningSettings tuningSettings;
-
+	
+	/// <summary>
+	/// Beat per minute.
+	/// </summary>
 	public float bpm = 60;
-	public int maxNotesPerBeat = 4;
+	
+	/// <summary>
+	/// Ticks per beat.
+	/// Ticks per minute are bpm * ticksPerBeat.
+	/// </summary>
+	public int ticksPerBeat = 4;
+	
+	/// <summary>
+	/// How many octaves of note players to create.
+	/// For example, if pentatonic tuning and scale is used,
+	/// each octave has 5 notes, and setting octaves to 2
+	/// will create 15 audio sources, if there are that many
+	/// tracks in the beat generator settings.
+	/// </summary>
 	public int octaves = 1;
+	
+	/// <summary>
+	/// Multiply the pitch of each audio source by this number.
+	/// </summary>
 	public float pitchOffset = 1;
 		
+	/// <summary>
+	/// The audio sources that play the notes.
+	/// Public, so can be accessed from script, but nonserializable,
+	/// and shouldn't be set from editor.
+	/// </summary>
 	[System.NonSerializedAttribute]
 	public AudioSource[] audioSources;
 	
@@ -27,6 +74,8 @@ public class TunePlayer : MonoBehaviour
 	int beatCount = 0;
 	int noteCount = 0;
 	int[][] tune;
+	BeatGenerator generator;
+	int[] currentNotes;
 	
 	void Start ()
 	{
@@ -35,7 +84,7 @@ public class TunePlayer : MonoBehaviour
 	
 	public void Init()
 	{
-		SetInterval(bpm, maxNotesPerBeat);
+		SetInterval(bpm, ticksPerBeat);
 		timer = interval;
 		
 		// Destroy old audio sources
@@ -49,6 +98,7 @@ public class TunePlayer : MonoBehaviour
 		
 		float[] pitches = Tuning.GetPitches(tuningSettings);
 		
+		// 0 or less octaves don't make sense
 		if (octaves < 1) octaves = 1;
 		
 		// Create audio sources
@@ -69,8 +119,8 @@ public class TunePlayer : MonoBehaviour
 			}
 		}
 		
-		BeatGenerator generator = new BeatGenerator(generatorSettings);
-		tune = generator.GenerateTune();
+		generator = new BeatGenerator(generatorSettings);
+		if (generatorSettings.trackLength > 0) tune = generator.GenerateTune();
 		
 		if (OnInitDone != null) OnInitDone();
 	}
@@ -86,16 +136,24 @@ public class TunePlayer : MonoBehaviour
 	{
 #if UNITY_EDITOR
 		// Allow tweaking interval in editor during play mode
-		SetInterval(bpm, maxNotesPerBeat);
+		SetInterval(bpm, ticksPerBeat);
 #endif
 		timer += interval;
 		
-		int noteIndex = noteCount % tune.Length;
-		for (int i = 0; i < tune[noteIndex].Length && i < audioSources.Length; i++)
+		if (tune != null)
 		{
-			if (tune[noteIndex][i] > 0.1f)
+			currentNotes = tune[noteCount % tune.Length];
+		}
+		else
+		{
+			currentNotes = generator.GetNextNotes(currentNotes);
+		}
+		
+		for (int i = 0; i < currentNotes.Length && i < audioSources.Length; i++)
+		{
+			if (currentNotes[i] > 0.1f)
 			{
-				audioSources[i].volume = tune[noteIndex][i];
+				audioSources[i].volume = currentNotes[i];
 				audioSources[i].Play();
 				if (OnPlayNote != null) OnPlayNote(audioSources[i]);
 			}
@@ -103,7 +161,7 @@ public class TunePlayer : MonoBehaviour
 		
 		noteCount ++;
 		
-		if (noteCount % maxNotesPerBeat == 1) Beat ();
+		if (noteCount % ticksPerBeat == 1) Beat ();
 		
 		// If interval is less then framerate, play more notes
 		//if (timer <= 0) PlayNote();
@@ -116,14 +174,23 @@ public class TunePlayer : MonoBehaviour
 		if (OnBeat != null) OnBeat(beatCount);
 	}
 	
-	public void SetInterval(float bpm, int maxNotesPerBeat)
+	/// <summary>
+	/// Sets the tick interval.
+	/// </summary>
+	/// <param name='bpm'>
+	/// Beats per minuts.
+	/// </param>
+	/// <param name='ticksPerBeat'>
+	/// Ticks per beat.
+	/// </param>
+	public void SetInterval(float bpm, int ticksPerBeat)
 	{
 		if (bpm <= float.MinValue) bpm = float.MinValue;
-		if (maxNotesPerBeat < 1) maxNotesPerBeat = 1;
+		if (ticksPerBeat < 1) ticksPerBeat = 1;
 		
 		this.bpm = bpm;
-		this.maxNotesPerBeat = maxNotesPerBeat;
+		this.ticksPerBeat = ticksPerBeat;
 		
-		interval = 60f / (bpm * maxNotesPerBeat);
+		interval = 60f / (bpm * ticksPerBeat);
 	}
 }

@@ -3,6 +3,10 @@ using System.Collections;
 
 namespace BeatGeneral
 {
+	/// <summary>
+	/// Settings holder for tuning settings.
+	/// Serialized so it can be displayed in editor.
+	/// </summary>
 	[System.Serializable]
 	public class TuningSettings
 	{

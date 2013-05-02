@@ -2,19 +2,47 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+/// <summary>
+/// Draws lines and creates and translates objects
+/// representing notes played by a TunePlayer.
+/// </summary>
 public class TunePlayerVisualizer : MonoBehaviour
 {
 	public TunePlayer player;
 	
+	/// <summary>
+	/// The line start position.
+	/// Also affects note object instatiating.
+	/// </summary>
 	public Transform firstStartPos;
-	public Transform firstEndPos;
+	/// <summary>
+	/// The line start position.
+	/// Also affects note object instatiating.
+	/// </summary>
 	public Transform lastStartPos;
+	
+	/// <summary>
+	/// The line end position.
+	/// </summary>
+	public Transform firstEndPos;
+	/// <summary>
+	/// The line end position.
+	/// </summary>
 	public Transform lastEndPos;
+	
 	public Color lineColor1 = Color.white;
 	public Color lineColor2 = Color.white;
+	
 	public GameObject noteObjectPrefab;
+	/// <summary>
+	/// The line renderer prefab.
+	/// Must not be null!
+	/// </summary>
 	public LineRenderer lineRendererPrefab;
 	
+	/// <summary>
+	/// The velocity vector for note objects.
+	/// </summary>
 	public Vector3 objectVelocity = new Vector3(-2, 0, 0);
 	
 	GameObject[] lineRendererObjects;
@@ -35,6 +63,7 @@ public class TunePlayerVisualizer : MonoBehaviour
 	
 	void Init()
 	{
+		// If initialing more than once, destroy old line objects.
 		if (lineRendererObjects != null)
 		{
 			for (int i = 0; i < lineRendererObjects.Length; i++)
@@ -43,6 +72,7 @@ public class TunePlayerVisualizer : MonoBehaviour
 			}
 		}
 		
+		// Create a dictionary for spawn positions for audio sources.
 		if (noteStartPositions != null) noteStartPositions.Clear();
 		else noteStartPositions = new Dictionary<AudioSource, Vector3>();
 		
@@ -58,11 +88,11 @@ public class TunePlayerVisualizer : MonoBehaviour
 			line.SetPosition(1, firstEndPos.position + (i + 1) * interval + Vector3.forward * 0.1f);
 			line.SetColors(lineColor1, lineColor2);
 			noteStartPositions.Add(player.audioSources[i], firstStartPos.position + (i + 1) * interval);
-			Debug.Log(noteStartPositions[player.audioSources[i]]);
 		}
 		
 		if (noteObjects != null)
 		{
+			// If initialing more than once, destroy old note objects.
 			for (int i = 0; i < noteObjects.Count; i++)
 			{
 				Destroy(noteObjects[i].gameObject);
@@ -78,8 +108,9 @@ public class TunePlayerVisualizer : MonoBehaviour
 	
 	void OnPlayNote(AudioSource source)
 	{
-		if (noteStartPositions != null && noteStartPositions.ContainsKey(source))
+		if (noteObjectPrefab != null && noteStartPositions != null && noteStartPositions.ContainsKey(source))
 		{
+			// Create a new note object.
 			GameObject go = Instantiate(
 					noteObjectPrefab, 
 					noteStartPositions[source], 
@@ -89,24 +120,24 @@ public class TunePlayerVisualizer : MonoBehaviour
 		}
 	}
 	
-	// Update is called once per frame
-	void Update () {
+	void Update ()
+	{
+		// Update note object positions
 		if (noteObjects != null)
 		{
 			for (int i = 0; i < noteObjects.Count; i++)
 			{
 				if (noteObjects[i] == null)
 				{
+					// If note object has been destroyed, remove from list.
 					noteObjects.RemoveAt(i);
 					i--;
 				}
 				else
 				{
-					float interval = 1 / (noteObjects.Count + 1);
 					noteObjects[i].position += objectVelocity * Time.deltaTime;
 				}
 			}
 		}
-		
 	}
 }

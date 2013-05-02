@@ -1,6 +1,9 @@
 using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// Flashes a light to the beat received from a TunePlayer.
+/// </summary>
 public class BeatLight : MonoBehaviour {
 	public TunePlayer player;
 	public float maxIntensity = 1;
