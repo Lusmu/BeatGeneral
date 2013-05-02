@@ -161,21 +161,32 @@ namespace BeatGeneral
 			if (scale == null)
 			{
 				pitches = new float[tunes.Length];
-				for (int i = 0; i < pitches.Length; i++)
-				{
-					pitches[i] = GetPitch(i + settings.noteOffset, tunes);
-				}
 			}
 			else
 			{
 				pitches = new float[scale.Length];
-				for (int i = 0; i < scale.Length; i++)
-				{
-					pitches[i] = GetPitch(scale[i] + settings.noteOffset, tunes);
-				}
+			}
+			
+			for (int i = 0; i < pitches.Length; i++)
+			{
+				pitches[i] = GetPitch(scale, i + settings.noteOffset , tunes);
 			}
 			
 			return pitches;
+		}
+		
+		static int GetOffsetArrayIndex(System.Array array, int index)
+		{
+			while (index < 0)
+			{
+				index += array.Length;
+			}
+			while (index >= array.Length)
+			{
+				index -= array.Length;
+			}
+			
+			return index;
 		}
 		
 		/// <summary>
@@ -203,37 +214,72 @@ namespace BeatGeneral
 		}
 		
 		/// <summary>
-		/// Gets a pitch with an offset from an array of pitches.
+		/// Gets a pitch from an array of pitches.
 		/// Changes octave when necessary.
 		/// </summary>
 		/// <returns>
 		/// The pitch modified by the offset.
 		/// </returns>
+		/// /// <param name='scale'>
+		/// The scale as an array of integers representing array indexes.
+		/// </param>
 		/// <param name='offset'>
-		/// Offset in steps.
+		/// The array index and offset.
 		/// </param>
-		/// <param name='scale'>
-		/// Scale as an array of pitches.
+		/// <param name='tuning'>
+		/// The tuning as an array of pitches.
 		/// </param>
-		public static float GetPitch(int offset, float[] scale)
+		public static float GetPitch(int[] scale, int offset, float[] tuning)
 		{
-			if (scale == null || scale.Length == 0) return 1;
-			
+			if (tuning == null || tuning.Length == 0) return 1;
+						
 			float octave = 1;
 			
-			while (offset < 0)
+			if (scale == null)
 			{
-				offset += scale.Length;
+				while (offset < 0)
+				{
+					offset += tuning.Length;
+					octave *= 0.5f;
+				}
+				while (offset >= tuning.Length)
+				{
+					offset -= tuning.Length;
+					octave *= 2f;
+				}
+			}
+			else
+			{
+				while (offset < 0)
+				{
+					offset += scale.Length;
+					octave *= 0.5f;
+				}
+				while (offset >= scale.Length)
+				{
+					offset -= scale.Length;
+					octave *= 2f;
+				}
+			}
+			
+			int index;
+			if (scale == null) index = offset;
+			else index = scale[offset];
+			
+			while (index < 0)
+			{
+				index += tuning.Length;
 				octave *= 0.5f;
 			}
-			while (offset >= scale.Length)
+			while (index >= tuning.Length)
 			{
-				offset -= scale.Length;
+				index -= tuning.Length;
 				octave *= 2f;
 			}
 			
-			return scale[offset] * octave;
+			return tuning[index] * octave;
 		}
+	
 	}
 	
 	
