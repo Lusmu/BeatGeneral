@@ -8,6 +8,7 @@ public class TunePlayer : MonoBehaviour
 	
 	public event System.Action<int> OnBeat;
 	public event System.Action<AudioSource> OnPlayNote;
+	public event System.Action OnInitDone;
 	
 	public AudioClip baseSound;
 	public GeneratorSettings generatorSettings;
@@ -18,7 +19,9 @@ public class TunePlayer : MonoBehaviour
 	public int octaves = 1;
 	public float pitchOffset = 1;
 		
-	AudioSource[] audioSources;
+	[System.NonSerializedAttribute]
+	public AudioSource[] audioSources;
+	
 	float timer = 0;
 	float interval = 1;
 	int beatCount = 0;
@@ -68,6 +71,8 @@ public class TunePlayer : MonoBehaviour
 		
 		BeatGenerator generator = new BeatGenerator(generatorSettings);
 		tune = generator.GenerateTune();
+		
+		if (OnInitDone != null) OnInitDone();
 	}
 	
 	void Update ()
@@ -92,8 +97,8 @@ public class TunePlayer : MonoBehaviour
 			{
 				audioSources[i].volume = tune[noteIndex][i];
 				audioSources[i].Play();
+				if (OnPlayNote != null) OnPlayNote(audioSources[i]);
 			}
-			if (OnPlayNote != null) OnPlayNote(audioSources[i]);
 		}
 		
 		noteCount ++;
