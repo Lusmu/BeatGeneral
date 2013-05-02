@@ -5,29 +5,42 @@ using System.Collections;
 /// Flashes a light to the beat received from a TunePlayer.
 /// </summary>
 public class BeatLight : MonoBehaviour {
+	public enum Mode
+	{
+		Beat,
+		Note
+	}
 	public TunePlayer player;
+	public Mode mode = Mode.Note;
 	public float maxIntensity = 1;
 	public float minIntensity = 0;
-	public float fadeSpeed = 4;
 	public Light targetLight;
+	public float fadeSpeed = 1;
 	
 	void OnEnable()
 	{
 		player.OnBeat += OnBeat;
+		player.OnPlayNote += OnPlayNote;
 	}
 	
 	void OnDisable()
 	{
 		player.OnBeat -= OnBeat;
+		player.OnPlayNote -= OnPlayNote;
+	}
+	
+	void OnPlayNote(AudioSource source)
+	{
+		if (mode == Mode.Note) light.intensity = maxIntensity;
 	}
 	
 	void OnBeat(int number)
 	{
-		light.intensity = maxIntensity;
+		if (mode == Mode.Beat) light.intensity = maxIntensity;
 	}
 	
 	void Update ()
-	{
-		light.intensity = Mathf.MoveTowards(light.intensity, minIntensity, maxIntensity * player.bpm * Time.deltaTime / 60);
+	{		
+		light.intensity = Mathf.MoveTowards(light.intensity, minIntensity, fadeSpeed * Time.deltaTime);
 	}
 }
