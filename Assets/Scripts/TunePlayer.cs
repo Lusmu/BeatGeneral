@@ -33,6 +33,8 @@ public class TunePlayer : MonoBehaviour
 	/// </summary>
 	public AudioClip baseSound;
 	
+	public float volume = 1;
+	
 	public GeneratorSettings generatorSettings;
 	public TuningSettings tuningSettings;
 	
@@ -153,7 +155,7 @@ public class TunePlayer : MonoBehaviour
 		{
 			if (currentNotes[i] > 0.1f)
 			{
-				audioSources[i].volume = currentNotes[i];
+				audioSources[i].volume = currentNotes[i] * volume;
 				audioSources[i].Play();
 				if (OnPlayNote != null) OnPlayNote(audioSources[i]);
 			}

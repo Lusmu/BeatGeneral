@@ -303,7 +303,10 @@ namespace BeatGeneral
 		/// Density between 0 and 1, exclusively.
 		/// </param>
 		int[] GetRandomAutomataRule(float density)
-		{
+		{	
+			// Avoid extreme values
+			density = Mathf.Clamp(density, 0.25f, 0.75f);
+			
 			int[] rule = new int[8];
 			int sum = 0;
 			for (int i = 0; i < rule.Length; i++)
@@ -314,7 +317,7 @@ namespace BeatGeneral
 				sum += rule[i];
 			}
 			
-			// We want to avoid extremes
+			// Avoid extreme values
 			if (sum < 2 || sum > 5) return GetRandomAutomataRule(density);
 			
 			return rule;
