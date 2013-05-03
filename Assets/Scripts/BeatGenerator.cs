@@ -27,6 +27,7 @@ namespace BeatGeneral
 	public class BeatGenerator
 	{
 		GeneratorSettings settings;
+		int[] currentRule;
 		
 		#region Premade automata rules
 		public static readonly int[] rule30 = new int[]{0,0,0,1,1,1,1,0};
@@ -57,7 +58,13 @@ namespace BeatGeneral
 		public int[][] GenerateTune()
 		{
 			if (settings.loadTuneFromFile != null) return ParseFromFile(settings.loadTuneFromFile);
-			else return GenerateRandom();
+			else 
+			{
+				if (settings.generationType == GenerationType.AutomataDefault) currentRule = rule110;
+				else if (settings.generationType == GenerationType.AutomataRandom) currentRule = GetRandomAutomataRule(settings.density);
+				
+				return GenerateRandom();
+			}
 		}
 		
 		/// <summary>
@@ -115,8 +122,8 @@ namespace BeatGeneral
 			}
 			else if (track >= lastColumn.Length - 1)
 			{
-				old[0] = lastColumn[0];
-				old[1] = lastColumn[0];
+				old[0] = lastColumn[track - 1];
+				old[1] = lastColumn[track];
 				old[2] = lastColumn[0];
 			}
 			else
@@ -126,8 +133,8 @@ namespace BeatGeneral
 				old[2] = lastColumn[track + 1];
 			}
 			
-			if (settings.generationType == GenerationType.AutomataDefault) return GetNextAutomata(old, rule90);
-			else if (settings.generationType == GenerationType.AutomataRandom) return GetNextAutomata(old, GetRandomAutomataRule(settings.density));
+			if (settings.generationType == GenerationType.AutomataDefault
+				|| settings.generationType == GenerationType.AutomataRandom) return GetNextAutomata(old, currentRule);
 			else return GetRandomNoise();
 		}
 		
@@ -143,12 +150,8 @@ namespace BeatGeneral
 			
 			for (int i = 0; i < tune.Length; i++)
 			{
-				tune[i] = new int[settings.tracks];
-				
-				for (int j = 0; j < tune[i].Length; j++)
-				{
-					tune[i][j] = GetRandomNoise();
-				}
+				if (i == 0) tune[i] = GetNextNotes(null);
+				else tune[i] = GetNextNotes(tune[i - 1]);
 			}
 			
 			return tune;
