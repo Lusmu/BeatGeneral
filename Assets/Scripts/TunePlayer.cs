@@ -156,7 +156,7 @@ public class TunePlayer : MonoBehaviour
 			if (currentNotes[i] > 0.1f)
 			{
 				audioSources[i].volume = currentNotes[i] * volume;
-				audioSources[i].Play();
+				audioSources[i].PlayScheduled((double)(Time.time + interval));
 				if (OnPlayNote != null) OnPlayNote(audioSources[i]);
 			}
 		}
